@@ -1,0 +1,47 @@
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(omdbapi)  # Install using `devtools::install_github("hrbrmstr/omdbapi")`
+
+# Set your OMDB API key (get it for free at https://www.omdbapi.com/apikey.aspx)
+api_key <- "your_api_key_here"
+
+# Function to fetch movie ratings
+get_movie_data <- function(movie_title) {
+  omdb_api_key(api_key)
+  movie_data <- omdb::omdb_get(movie_title)
+  
+  if (is.null(movie_data)) {
+    message("Movie not found: ", movie_title)
+    return(NULL)
+  }
+  
+  return(movie_data)
+}
+
+# List of movies to analyze
+movie_list <- c("The Matrix", "Inception", "Titanic", "The Godfather", "Interstellar")
+
+# Fetch data for each movie
+movie_data <- lapply(movie_list, get_movie_data)
+movie_df <- do.call(rbind, movie_data)
+
+# Prepare data for visualization
+movie_ratings <- movie_df %>%
+  select(Title, imdbRating, Metascore) %>%
+  mutate(
+    imdbRating = as.numeric(imdbRating),
+    Metascore = as.numeric(Metascore)
+  ) %>%
+  na.omit()
+
+# Visualization: IMDB Rating vs. Metascore
+ggplot(movie_ratings, aes(x = imdbRating, y = Metascore, label = Title)) +
+  geom_point(color = "blue", size = 4) +
+  geom_text(vjust = -1, size = 3) +
+  labs(
+    title = "IMDB Ratings vs. Metascore",
+    x = "IMDB Rating",
+    y = "Metascore"
+  ) +
+  theme_minimal()
